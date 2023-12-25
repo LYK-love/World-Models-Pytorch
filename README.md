@@ -2,15 +2,55 @@
 
 Paper: Ha and Schmidhuber, "World Models", 2018. https://doi.org/10.5281/zenodo.1207631. For a quick summary of the paper and some additional experiments, visit the [github page](https://ctallec.github.io/world-models/).
 
+This implementation is based on [ctallec's codebase](https://github.com/ctallec/world-models), where the dependencies are not precisely specified. I overcome this shortcoming by detailing the dependency version and testing it.
 
-## Prerequisites
+Code tested on:
 
-The implementation is based on Python3 and PyTorch, check their website [here](https://pytorch.org) for installation instructions. The rest of the requirements is included in the [requirements file](requirements.txt), to install them:
+1. Ubuntu22.04 or 20.04
+2. Nvidia Driver Version: 545.23.08    CUDA Version: 12.3
+3. Python3.9
+
+You'll be safe to go if following this specification.
+
+# Prerequisites
+
+Now you need to install some prerequisites:
+
+First, you need to install `swig` and `xvfb`. On Ubuntu:
+
+```sh
+sudo apt-get install swig
+sudo apt-get install xvfb
+```
+
+
+
+Then, you need to install PyTorch in your python environment. Check their website [here](https://pytorch.org) for installation instructions. 
+
+The rest of the requirements is included in the [requirements file](requirements.txt), to install them:
+
 ```bash
 pip3 install -r requirements.txt
 ```
 
-## Running the worldmodels
+* You may notice that in `requirements.txt`, `gym==0.9.4`, which is a rather old version. This is the same version of `gym` in David Ha's original implementation (`gym==0.9.4`). Meanwhile, our code does **NOT** work on gym 0.10.x.
+* `pyglet==1.3.2` in order to avoid [this bug](https://stackoverflow.com/questions/56946417/getting-attributeerror-imagedata-object-has-no-attribute-data-in-headle).
+
+# When running on a headless server
+
+When running on a headless server, you will need to use `xvfb-run` to launch all the following scropts.
+
+```sh
+xvfb-run -s "-screen 0 1400x900x24" python <script>
+```
+
+E.g., for data generation
+
+```sh
+xvfb-run -s "-screen 0 1400x900x24" python data/generation_script.py --rollouts 1000 --rootdir datasets/carracing --threads 8
+```
+
+# Running the worldmodels
 
 The model is composed of three parts:
 
@@ -24,7 +64,8 @@ Training scripts take as argument:
 * **--logdir** : The directory in which the models will be stored. If the logdir specified already exists, it loads the old model and continues the training.
 * **--noreload** : If you want to override a model in *logdir* instead of reloading it, add this option.
 
-### 1. Data generation
+## 1. Data generation
+
 Before launching the VAE and MDN-RNN training scripts, you need to generate a dataset of random rollouts and place it in the `datasets/carracing` folder.
 
 Data generation is handled through the `data/generation_script.py` script, e.g.
@@ -34,19 +75,22 @@ python data/generation_script.py --rollouts 1000 --rootdir datasets/carracing --
 
 Rollouts are generated using a *brownian* random policy, instead of the *white noise* random `action_space.sample()` policy from gym, providing more consistent rollouts.
 
-### 2. Training the VAE
+## 2. Training the VAE
+
 The VAE is trained using the `trainvae.py` file, e.g.
 ```bash
 python trainvae.py --logdir exp_dir
 ```
 
-### 3. Training the MDN-RNN
+## 3. Training the MDN-RNN
+
 The MDN-RNN is trained using the `trainmdrnn.py` file, e.g.
 ```bash
 python trainmdrnn.py --logdir exp_dir
 ```
 A VAE must have been trained in the same `exp_dir` for this script to work.
-### 4. Training and testing the Controller
+## 4. Training and testing the Controller
+
 Finally, the controller is trained using CMA-ES, e.g.
 ```bash
 python traincontroller.py --logdir exp_dir --n-samples 4 --pop-size 4 --target-return 950 --display
@@ -56,7 +100,8 @@ You can test the obtained policy with `test_controller.py` e.g.
 python test_controller.py --logdir exp_dir
 ```
 
-### Notes
+## Notes
+
 When running on a headless server, you will need to use `xvfb-run` to launch the controller training script. For instance,
 ```bash
 xvfb-run -s "-screen 0 1400x900x24" python traincontroller.py --logdir exp_dir --n-samples 4 --pop-size 4 --target-return 950 --display
@@ -72,13 +117,7 @@ of workers by specifying the `--max-workers` argument.
 If you have several GPUs available, `traincontroller` will take advantage of
 all gpus specified by `CUDA_VISIBLE_DEVICES`.
 
-## Authors
+## Author
 
-* **Corentin Tallec** - [ctallec](https://github.com/ctallec)
-* **Léonard Blier** - [leonardblier](https://github.com/leonardblier)
-* **Diviyan Kalainathan** - [diviyan-kalainathan](https://github.com/diviyan-kalainathan)
+* [Yukuan Lu (陆昱宽)](https://github.com/LYK-love/World-Models-Pytorch).
 
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
