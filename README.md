@@ -23,8 +23,6 @@ sudo apt-get install swig
 sudo apt-get install xvfb
 ```
 
-
-
 Then, you need to install PyTorch in your python environment. Check their website [here](https://pytorch.org) for installation instructions. 
 
 The rest of the requirements is included in the [requirements file](requirements.txt), to install them:
@@ -36,21 +34,40 @@ pip3 install -r requirements.txt
 * You may notice that in `requirements.txt`, `gym==0.9.4`, which is a rather old version. This is the same version of `gym` in David Ha's original implementation (`gym==0.9.4`). Meanwhile, our code does **NOT** work on gym 0.10.x.
 * `pyglet==1.3.2` in order to avoid [this bug](https://stackoverflow.com/questions/56946417/getting-attributeerror-imagedata-object-has-no-attribute-data-in-headle).
 
+At last, you need to create a dir:
+```shell
+mkdir exp_dir
+```
+
 # When running on a headless server
 
-When running on a headless server, you will need to use `xvfb-run` to launch all the following scropts.
+> You may read this chapter if you run on a headless server.
+
+It's common for machine learning algorithms running on a headless server, i.e., the server doesn't connect to a  monitor.
+
+However, running our world model scripts demands the system has a graphical output. And a headless server doesn't have a display.
+
+So, for those scripts needing a graphical output, you can run them with prepending script xvfb-run -s "-screen 0 1400x900x24". That is:
 
 ```sh
 xvfb-run -s "-screen 0 1400x900x24" python <script>
 ```
 
-E.g., for data generation
+`xvfb-run` will create a X server in memory instead of displaying them on a screen, which is compatitable with headless servers.
 
-```sh
-xvfb-run -s "-screen 0 1400x900x24" python data/generation_script.py --rollouts 1000 --rootdir datasets/carracing --threads 8
+But at the testing process, you must watch the grahpic outputs on your local machine. In this case you need to use VNC or x11 forwarding.
+
+I've tested with x11 forwarding and got this error:
+
+```
+pyglet.gl.ContextException: Could not create GL context
 ```
 
-# Running the worldmodels
+As a result, I have to use VNC.
+
+Note: the test script needs GLX support, so `tightvnc` may not satisfy as it doesn't support GLX. You can freely use `tigervnc` or `x11vnc` or else.
+
+# Training
 
 The model is composed of three parts:
 
@@ -75,7 +92,13 @@ python data/generation_script.py --rollouts 1000 --rootdir datasets/carracing --
 
 Rollouts are generated using a *brownian* random policy, instead of the *white noise* random `action_space.sample()` policy from gym, providing more consistent rollouts.
 
-## 2. Training the VAE
+> If you're a headless server, you should run:
+>
+> ```shell
+> xvfb-run -s "-screen 0 1400x900x24" python data/generation_script.py --rollouts 1000 --rootdir datasets/carracing --threads 8
+> ```
+
+## 2. the VAE
 
 The VAE is trained using the `trainvae.py` file, e.g.
 ```bash
@@ -92,13 +115,29 @@ A VAE must have been trained in the same `exp_dir` for this script to work.
 ## 4. Training and testing the Controller
 
 Finally, the controller is trained using CMA-ES, e.g.
-```bash
-xvfb-run -s "-screen 0 1400x900x24" python traincontroller.py --logdir exp_dir --n-samples 4 --pop-size 4 --target-return 950 --display
+
+```shell
+python traincontroller.py --logdir exp_dir --n-samples 4 --pop-size 4 --target-return 950 --display
 ```
+
+> If If you're a headless server, you should run:
+>
+> ```bash
+> xvfb-run -s "-screen 0 1400x900x24" python traincontroller.py --logdir exp_dir --n-samples 4 --pop-size 4 --target-return 950 --display
+> ```
+
+The traing of controller is extremely slow. Make sure you have a strong GPU server.
+
+# Testing
+
 You can test the obtained policy with `test_controller.py` e.g.
+
 ```bash
-python test_controller.py --logdir exp_dir
+python test_controller.py --logdir exp_dir --render
 ```
+* `--render`: render output to your X server.
+* To run on a headless server, you should `xvfb-run -s "-screen 0 1400x900x24" python test_controller.py --logdir exp_dir`. But it's meaningless since you won't see any graphic output, you'll only get a test score.
+> If If you use a headless server, you should use VNC to connect to thr server. Then run this command. The output will show in your VNC screen.
 
 ## Notes
 
@@ -119,5 +158,4 @@ all gpus specified by `CUDA_VISIBLE_DEVICES`.
 
 ## Author
 
-* [Yukuan Lu (陆昱宽)](https://github.com/LYK-love/World-Models-Pytorch).
-
+[//]: # (* [Yukuan Lu &#40;陆昱宽&#41;]&#40;https://github.com/LYK-love/World-Models-Pytorch&#41;.)

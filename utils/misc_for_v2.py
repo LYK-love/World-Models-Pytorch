@@ -8,6 +8,11 @@ from models import MDRNNCell, VAE, Controller
 import gym
 import gym.envs.box2d
 
+# For Gym 2.x, CarRacing-v2
+
+print("Error if run in IDE")
+# Must have some filepath issue
+
 # A bit dirty: manually change size of car racing env
 gym.envs.box2d.car_racing.STATE_W, gym.envs.box2d.car_racing.STATE_H = 64, 64
 
@@ -137,7 +142,9 @@ class RolloutGenerator(object):
                 ctrl_state['reward']))
             self.controller.load_state_dict(ctrl_state['state_dict'])
 
-        self.env = gym.make('CarRacing-v0')
+        # self.env = gym.make('CarRacing-v0')
+        self.env = gym.make('CarRacing-v2', render_mode='human')
+
         self.device = device
 
         self.time_limit = time_limit
@@ -175,7 +182,7 @@ class RolloutGenerator(object):
         if params is not None:
             load_parameters(params, self.controller)
 
-        obs = self.env.reset()
+        obs = self.env.reset()[0]
 
         # This first render is required !
         self.env.render()
@@ -189,12 +196,12 @@ class RolloutGenerator(object):
         while True:
             obs = transform(obs).unsqueeze(0).to(self.device)
             action, hidden = self.get_action_and_transition(obs, hidden)
-            obs, reward, done, _ = self.env.step(action)
+            obs, reward, terminated, truncated, _ = self.env.step(action)
 
             if render:
                 self.env.render()
 
             cumulative += reward
-            if done or i > self.time_limit:
+            if terminated or i > self.time_limit:
                 return - cumulative
             i += 1
