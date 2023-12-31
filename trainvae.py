@@ -128,7 +128,7 @@ if __name__ == "__main__":
 
     reload_file = join(vae_dir, 'best.tar')
     if not args.noreload and exists(reload_file):
-        state = torch.load(reload_file)
+        state = torch.losad(reload_file)
         print("Reloading model at epoch {}"
               ", with test error {}".format(
             state['epoch'],

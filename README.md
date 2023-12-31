@@ -93,7 +93,7 @@ A VAE must have been trained in the same `exp_dir` for this script to work.
 
 Finally, the controller is trained using CMA-ES, e.g.
 ```bash
-python traincontroller.py --logdir exp_dir --n-samples 4 --pop-size 4 --target-return 950 --display
+xvfb-run -s "-screen 0 1400x900x24" python traincontroller.py --logdir exp_dir --n-samples 4 --pop-size 4 --target-return 950 --display
 ```
 You can test the obtained policy with `test_controller.py` e.g.
 ```bash

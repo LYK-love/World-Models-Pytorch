@@ -1,4 +1,10 @@
-datasets
+# Generated Data
+datasets/*
+
+# Checkpoints
+exp_dir/*
+
+
 logs
 __pycache__
 .pytest_cache
@@ -7,3 +13,4 @@ Dockerfile
 frames/
 dock_config.json
 .mypy_cachec
+
